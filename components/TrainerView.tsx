@@ -35,18 +35,36 @@ export default function TrainerView() {
         const foundHistory: { [key: string]: WorkoutHistoryEntry[] } = {};
         let foundName = "Nieznany Klient";
 
+        // Iteracja po kluczach, aby znaleźć pasujące dane
         Object.keys(rawJson).forEach(key => {
-            // Find Main Workouts object (heuristics: key starts with workout_app and has no suffix like _history)
-            if (key.includes('workout_app') && !key.includes('_history_') && !key.includes('_measurements') && !key.includes('_cardio') && !key.includes('_last_')) {
+            // Logika wykrywania głównego obiektu treningowego
+            // Szukamy klucza zawierającego 'workout_app', ale wykluczamy klucze pomocnicze
+            const isMainWorkoutKey = key.includes('workout_app') 
+                && !key.includes('_history_') 
+                && !key.includes('_measurements') 
+                && !key.includes('_cardio') 
+                && !key.includes('_last_');
+
+            if (isMainWorkoutKey) {
                 try {
-                    foundWorkouts = JSON.parse(rawJson[key]);
-                } catch {}
+                    // Obsługa zarówno stringified JSON (standard) jak i czystego obiektu (jeśli plik był ręcznie edytowany)
+                    const content = rawJson[key];
+                    if (typeof content === 'string') {
+                        foundWorkouts = JSON.parse(content);
+                    } else if (typeof content === 'object') {
+                        foundWorkouts = content;
+                    }
+                } catch (e) {
+                    console.warn("Błąd parsowania klucza treningów:", key, e);
+                }
             }
             
             // Find Measurements
             if (key.includes('_measurements')) {
                 try {
-                    foundMeasurements = JSON.parse(rawJson[key]);
+                    const content = rawJson[key];
+                    if (typeof content === 'string') foundMeasurements = JSON.parse(content);
+                    else if (typeof content === 'object') foundMeasurements = content;
                 } catch {}
             }
 
@@ -56,7 +74,9 @@ export default function TrainerView() {
                 if (parts.length > 1) {
                     const workoutId = parts[1];
                     try {
-                        foundHistory[workoutId] = JSON.parse(rawJson[key]);
+                        const content = rawJson[key];
+                        if (typeof content === 'string') foundHistory[workoutId] = JSON.parse(content);
+                        else if (typeof content === 'object') foundHistory[workoutId] = content;
                     } catch {}
                 }
             }
@@ -70,12 +90,12 @@ export default function TrainerView() {
                 clientName: foundName
             });
         } else {
-            alert("Nie znaleziono poprawnych danych treningowych w tym pliku.");
+            alert("Nie znaleziono głównej struktury planu treningowego w pliku.\n\nUpewnij się, że w aplikacji 'Ucznia' kliknięto 'Eksportuj' po zapisaniu zmian (wymuszony zapis).");
         }
 
       } catch (err) {
         console.error(err);
-        alert("Błąd odczytu pliku. Upewnij się, że to poprawny plik kopii zapasowej.");
+        alert("Błąd odczytu pliku. Upewnij się, że to poprawny plik kopii zapasowej JSON.");
       }
     };
     reader.readAsText(file);

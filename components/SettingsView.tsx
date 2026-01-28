@@ -1,5 +1,6 @@
 import React, { useContext, useState, useRef } from 'react';
 import { AppContext } from '../App';
+import { storage } from '../services/storage';
 import { DEFAULT_WORKOUTS, CLIENT_CONFIG } from '../constants';
 import { Exercise, WorkoutPlan } from '../types';
 
@@ -87,6 +88,11 @@ export default function SettingsView() {
 
   // --- Backup Logic ---
   const handleExport = () => {
+    // CRITICAL FIX: Zapisz aktualny stan z pamięci RAM do LocalStorage przed eksportem.
+    // Dzięki temu, nawet jeśli użytkownik dopiero co zaktualizował aplikację i nie wprowadził zmian,
+    // plik eksportu będzie zawierał pełną strukturę treningów, a nie pusty obiekt.
+    storage.saveWorkouts(workouts);
+
     const data: any = {};
     // Iterate localStorage and grab keys related to this app
     for(let i = 0; i < localStorage.length; i++) {
@@ -300,4 +306,4 @@ const ExerciseForm = ({ exercise, onSave, onCancel, onDelete }: {
       <button onClick={onDelete} className="w-full mt-2 bg-red-900 text-red-200 py-2 rounded text-xs flex justify-center items-center hover:bg-red-800"><i className="fas fa-trash mr-1"></i> Usuń ćwiczenie</button>
     </div>
   );
-};
+}
