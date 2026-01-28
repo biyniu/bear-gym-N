@@ -3,13 +3,22 @@ import { AppContext } from '../App';
 import { storage } from '../services/storage';
 import { CLIENT_CONFIG } from '../constants';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { WorkoutPlan } from '../types';
+import { WorkoutPlan, WorkoutsMap, WorkoutHistoryEntry } from '../types';
 
 // Deklaracja dla globalnej biblioteki załadowanej w index.html
 declare var html2pdf: any;
 
-export default function ProgressView() {
-  const { workouts } = useContext(AppContext);
+interface ProgressViewProps {
+  overrideWorkouts?: WorkoutsMap;
+  overrideHistory?: { [key: string]: WorkoutHistoryEntry[] };
+}
+
+export default function ProgressView({ overrideWorkouts, overrideHistory }: ProgressViewProps) {
+  const { workouts: contextWorkouts } = useContext(AppContext);
+  
+  // Użyj danych przekazanych (tryb trenera) lub z kontekstu (tryb normalny)
+  const workouts = overrideWorkouts || contextWorkouts;
+  
   const workoutIds = Object.keys(workouts);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string>(workoutIds[0] || "");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -17,7 +26,14 @@ export default function ProgressView() {
 
   // Funkcja pomocnicza do pobierania danych dla konkretnego ćwiczenia
   const getExerciseData = (workoutId: string, exerciseId: string) => {
-    const history = storage.getHistory(workoutId);
+    let history: WorkoutHistoryEntry[] = [];
+
+    if (overrideHistory) {
+      history = overrideHistory[workoutId] || [];
+    } else {
+      history = storage.getHistory(workoutId);
+    }
+
     if (!history || history.length === 0) return [];
 
     // Odwracamy historię (najstarsze pierwsze) dla wykresu
@@ -52,10 +68,11 @@ export default function ProgressView() {
     if (!contentRef.current) return;
     setIsGeneratingPdf(true);
 
+    const titleSuffix = overrideWorkouts ? "_TRENER" : "";
     const element = contentRef.current;
     const opt = {
       margin:       [5, 5],
-      filename:     `Raport_${CLIENT_CONFIG.name.replace(/\s+/g, '_')}_${selectedWorkoutId}.pdf`,
+      filename:     `Raport_${CLIENT_CONFIG.name.replace(/\s+/g, '_')}_${selectedWorkoutId}${titleSuffix}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, logging: false },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -93,7 +110,9 @@ export default function ProgressView() {
       
       {/* Panel sterowania - widoczny tylko w aplikacji, nie w PDF */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h2 className="text-2xl font-bold text-white text-center md:text-left">Wykresy Postępu</h2>
+        <h2 className="text-2xl font-bold text-white text-center md:text-left">
+            {overrideWorkouts ? "Podgląd: Wykresy" : "Wykresy Postępu"}
+        </h2>
         
         <div className="flex gap-2 w-full md:w-auto">
             <select 
@@ -126,7 +145,7 @@ export default function ProgressView() {
             <div className="mb-4 text-center border-b border-gray-700 pb-2">
                 <h1 className="text-2xl font-bold text-red-500 uppercase">{currentWorkout?.title}</h1>
                 <div className="flex justify-between text-gray-400 text-xs mt-1 px-4">
-                    <span>Raport: {CLIENT_CONFIG.name}</span>
+                    <span>Raport: {overrideWorkouts ? "TRENER" : CLIENT_CONFIG.name}</span>
                     <span>Data: {new Date().toLocaleDateString()}</span>
                 </div>
             </div>

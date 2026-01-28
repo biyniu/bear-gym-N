@@ -3,8 +3,16 @@ import { storage } from '../services/storage';
 import { BodyMeasurement } from '../types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-export default function MeasurementsView() {
-  const [measurements, setMeasurements] = useState<BodyMeasurement[]>(storage.getMeasurements());
+interface MeasurementsViewProps {
+  overrideMeasurements?: BodyMeasurement[];
+}
+
+export default function MeasurementsView({ overrideMeasurements }: MeasurementsViewProps) {
+  // Use overridden data (Trainer mode) or local storage
+  const [measurements, setMeasurements] = useState<BodyMeasurement[]>(overrideMeasurements || storage.getMeasurements());
+  
+  const isTrainerMode = !!overrideMeasurements;
+  
   const [selectedMetric, setSelectedMetric] = useState<keyof BodyMeasurement>('weight');
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -48,7 +56,9 @@ export default function MeasurementsView() {
     const updated = [...measurements, newEntry].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     setMeasurements(updated);
-    storage.saveMeasurements(updated);
+    if (!isTrainerMode) {
+        storage.saveMeasurements(updated);
+    }
     
     // Clear form except date
     setForm(prev => ({ 
@@ -61,7 +71,9 @@ export default function MeasurementsView() {
     if (!window.confirm("Usunąć ten wpis?")) return;
     const updated = measurements.filter(m => m.id !== id);
     setMeasurements(updated);
-    storage.saveMeasurements(updated);
+    if (!isTrainerMode) {
+        storage.saveMeasurements(updated);
+    }
   };
 
   // Prepare data for chart
@@ -91,49 +103,53 @@ export default function MeasurementsView() {
 
   return (
     <div className="animate-fade-in pb-10">
-      <h2 className="text-2xl font-bold text-white mb-6 text-center">Pomiary Ciała</h2>
+      <h2 className="text-2xl font-bold text-white mb-6 text-center">
+        {isTrainerMode ? "Podgląd: Pomiary" : "Pomiary Ciała"}
+      </h2>
 
-      {/* Input Form */}
-      <div className="bg-[#1e1e1e] rounded-xl shadow-md p-4 mb-6 border border-gray-800">
-        <h3 className="text-sm font-bold text-gray-400 mb-3 uppercase">Nowy wpis</h3>
-        <div className="grid grid-cols-2 gap-3 mb-3">
-             <div className="col-span-2">
-                <label className="text-xs text-gray-500">Data</label>
-                <input 
-                    type="date" 
-                    value={form.date} 
-                    onChange={e => handleChange('date', e.target.value)}
-                    className="w-full bg-gray-800 text-white p-2 rounded border border-gray-600 focus:border-green-500 outline-none" 
-                />
-             </div>
-             <div>
-                <label className="text-xs text-gray-500">Waga (kg)</label>
-                <input type="number" value={form.weight} onChange={e => handleChange('weight', e.target.value)} className="w-full bg-gray-900 text-white p-2 rounded border border-gray-700 focus:border-green-500 outline-none" placeholder="0.0" />
-             </div>
-             <div>
-                <label className="text-xs text-gray-500">Pas (cm)</label>
-                <input type="number" value={form.waist} onChange={e => handleChange('waist', e.target.value)} className="w-full bg-gray-900 text-white p-2 rounded border border-gray-700 focus:border-green-500 outline-none" placeholder="0" />
-             </div>
-             <div>
-                <label className="text-xs text-gray-500">Klatka (cm)</label>
-                <input type="number" value={form.chest} onChange={e => handleChange('chest', e.target.value)} className="w-full bg-gray-900 text-white p-2 rounded border border-gray-700 focus:border-green-500 outline-none" placeholder="0" />
-             </div>
-             <div>
-                <label className="text-xs text-gray-500">Biceps (cm)</label>
-                <input type="number" value={form.biceps} onChange={e => handleChange('biceps', e.target.value)} className="w-full bg-gray-900 text-white p-2 rounded border border-gray-700 focus:border-green-500 outline-none" placeholder="0" />
-             </div>
-             <div className="col-span-2">
-                <label className="text-xs text-gray-500">Udo (cm)</label>
-                <input type="number" value={form.thigh} onChange={e => handleChange('thigh', e.target.value)} className="w-full bg-gray-900 text-white p-2 rounded border border-gray-700 focus:border-green-500 outline-none" placeholder="0" />
-             </div>
+      {/* Input Form - Hidden in Trainer Mode */}
+      {!isTrainerMode && (
+        <div className="bg-[#1e1e1e] rounded-xl shadow-md p-4 mb-6 border border-gray-800">
+            <h3 className="text-sm font-bold text-gray-400 mb-3 uppercase">Nowy wpis</h3>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="col-span-2">
+                    <label className="text-xs text-gray-500">Data</label>
+                    <input 
+                        type="date" 
+                        value={form.date} 
+                        onChange={e => handleChange('date', e.target.value)}
+                        className="w-full bg-gray-800 text-white p-2 rounded border border-gray-600 focus:border-green-500 outline-none" 
+                    />
+                </div>
+                <div>
+                    <label className="text-xs text-gray-500">Waga (kg)</label>
+                    <input type="number" value={form.weight} onChange={e => handleChange('weight', e.target.value)} className="w-full bg-gray-900 text-white p-2 rounded border border-gray-700 focus:border-green-500 outline-none" placeholder="0.0" />
+                </div>
+                <div>
+                    <label className="text-xs text-gray-500">Pas (cm)</label>
+                    <input type="number" value={form.waist} onChange={e => handleChange('waist', e.target.value)} className="w-full bg-gray-900 text-white p-2 rounded border border-gray-700 focus:border-green-500 outline-none" placeholder="0" />
+                </div>
+                <div>
+                    <label className="text-xs text-gray-500">Klatka (cm)</label>
+                    <input type="number" value={form.chest} onChange={e => handleChange('chest', e.target.value)} className="w-full bg-gray-900 text-white p-2 rounded border border-gray-700 focus:border-green-500 outline-none" placeholder="0" />
+                </div>
+                <div>
+                    <label className="text-xs text-gray-500">Biceps (cm)</label>
+                    <input type="number" value={form.biceps} onChange={e => handleChange('biceps', e.target.value)} className="w-full bg-gray-900 text-white p-2 rounded border border-gray-700 focus:border-green-500 outline-none" placeholder="0" />
+                </div>
+                <div className="col-span-2">
+                    <label className="text-xs text-gray-500">Udo (cm)</label>
+                    <input type="number" value={form.thigh} onChange={e => handleChange('thigh', e.target.value)} className="w-full bg-gray-900 text-white p-2 rounded border border-gray-700 focus:border-green-500 outline-none" placeholder="0" />
+                </div>
+            </div>
+            <button 
+                onClick={handleSave} 
+                className="w-full bg-green-700 hover:bg-green-600 text-white py-3 rounded font-bold shadow transition"
+            >
+                ZAPISZ POMIAR
+            </button>
         </div>
-        <button 
-            onClick={handleSave} 
-            className="w-full bg-green-700 hover:bg-green-600 text-white py-3 rounded font-bold shadow transition"
-        >
-            ZAPISZ POMIAR
-        </button>
-      </div>
+      )}
 
       {/* Chart */}
       <div className="bg-[#1e1e1e] rounded-xl shadow-md p-4 mb-6 border border-gray-800">
@@ -207,12 +223,14 @@ export default function MeasurementsView() {
                             {(m.chest || m.biceps || m.thigh) && <span className="text-gray-600">...</span>}
                         </div>
                     </div>
-                    <button 
-                        onClick={() => handleDelete(m.id)}
-                        className="text-red-900 hover:text-red-500 p-2 transition"
-                    >
-                        <i className="fas fa-trash"></i>
-                    </button>
+                    {!isTrainerMode && (
+                        <button 
+                            onClick={() => handleDelete(m.id)}
+                            className="text-red-900 hover:text-red-500 p-2 transition"
+                        >
+                            <i className="fas fa-trash"></i>
+                        </button>
+                    )}
                 </div>
             ))}
             {measurements.length === 0 && (

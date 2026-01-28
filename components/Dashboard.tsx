@@ -42,7 +42,7 @@ export default function Dashboard() {
             <i className="fas fa-camera text-white text-2xl"></i>
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">{CLIENT_CONFIG.name} - Trening</h2>
+        <h2 className="text-2xl font-bold text-white tracking-tight">{CLIENT_CONFIG.name}</h2>
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -102,6 +102,15 @@ export default function Dashboard() {
             <i className="fas fa-heartbeat text-2xl mr-3"></i>
             <span className="font-bold">Log Cardio</span>
         </button>
+
+        <div className="mt-4 pt-4 border-t border-gray-800">
+           <button 
+                onClick={() => navigate('/trainer')} 
+                className="w-full bg-blue-900/50 hover:bg-blue-900 text-blue-200 py-3 rounded-xl border border-blue-800 transition flex items-center justify-center text-sm font-bold"
+            >
+                <i className="fas fa-user-graduate mr-2"></i> STREFA TRENERA
+            </button>
+        </div>
       </div>
     </div>
   );

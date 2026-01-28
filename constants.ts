@@ -5,9 +5,9 @@ import { WorkoutsMap, AppSettings } from './types';
 // ==========================================
 
 export const CLIENT_CONFIG = {
-  name: "Damian B.", 
-  // Zmieniłem wersję na v3, aby wczytać pełny zestaw 6 planów jako nowy start
-  storageKey: 'workout_app_damian_v3' 
+  name: "Niedźwiedź Trener", 
+  // Zmieniony klucz, aby wczytać nową konfigurację
+  storageKey: 'workout_app_niedzwiedz_v1' 
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -20,7 +20,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
   "push1": {
       title: "PUSH 1",
       warmup: [
-          { name: "Przykładowa rozgrzewka", pl: "", link: "", reps: "10" }
+          { name: "Bieżnia", pl: "", link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", reps: "10 min" }
       ],
       exercises: [
           { 
@@ -32,7 +32,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", 
             type: "standard" 
           },
           { 
@@ -44,7 +44,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=LIVJZZyZ2qM", 
             type: "standard" 
           },
           { 
@@ -56,7 +56,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/results?search_query=band+dislocation", 
             type: "standard" 
           },
           { 
@@ -68,7 +68,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/M5DeSgxNyKQ", 
             type: "standard" 
           },
           { 
@@ -80,7 +80,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/qB_bC7-CQjI", 
             type: "standard" 
           },
           { 
@@ -92,7 +92,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/YuLqw3kHPaw", 
             type: "standard" 
           },
           { 
@@ -104,7 +104,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/5orOHJL2qS4", 
             type: "standard" 
           }
       ]
@@ -112,7 +112,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
   "legs1": {
       title: "LEGS 1",
       warmup: [
-            { name: "Przykładowa rozgrzewka", pl: "", link: "", reps: "10" }
+            { name: "Bieżnia", pl: "", link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", reps: "10 min" }
       ],
       exercises: [
           { 
@@ -124,7 +124,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", 
             type: "standard" 
           },
           { 
@@ -136,7 +136,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=LIVJZZyZ2qM", 
             type: "standard" 
           },
           { 
@@ -148,7 +148,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/results?search_query=band+dislocation", 
             type: "standard" 
           },
           { 
@@ -160,7 +160,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/M5DeSgxNyKQ", 
             type: "standard" 
           },
           { 
@@ -172,19 +172,19 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/qB_bC7-CQjI", 
             type: "standard" 
           },
           { 
             id: "legs1_6", 
-            name: "Suwnica (obok Hack Siad)", 
-            pl: "Suwnica ta od razu obok maszyny di hack siadów", 
+            name: "Suwnica ta od razu obok maszyny di hack siadów", 
+            pl: "", 
             sets: 3, 
             reps: "12-15", 
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/YuLqw3kHPaw", 
             type: "standard" 
           },
           { 
@@ -196,7 +196,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/5orOHJL2qS4", 
             type: "standard" 
           }
       ]
@@ -204,7 +204,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
   "pull1": {
       title: "PULL 1",
       warmup: [
-            { name: "Przykładowa rozgrzewka", pl: "", link: "", reps: "10" }
+            { name: "Bieżnia", pl: "", link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", reps: "10 min" }
       ],
       exercises: [
           { 
@@ -216,7 +216,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", 
             type: "standard" 
           },
           { 
@@ -228,7 +228,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=LIVJZZyZ2qM", 
             type: "standard" 
           },
           { 
@@ -240,7 +240,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/results?search_query=band+dislocation", 
             type: "standard" 
           },
           { 
@@ -252,7 +252,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/M5DeSgxNyKQ", 
             type: "standard" 
           },
           { 
@@ -264,7 +264,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/qB_bC7-CQjI", 
             type: "standard" 
           },
           { 
@@ -276,7 +276,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/YuLqw3kHPaw", 
             type: "standard" 
           },
           { 
@@ -288,7 +288,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 10, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/5orOHJL2qS4", 
             type: "standard" 
           }
       ]
@@ -296,7 +296,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
   "push2": {
       title: "PUSH 2",
       warmup: [
-            { name: "Przykładowa Rozgrzewka", pl: "", link: "", reps: "10" }
+            { name: "Bieżnia", pl: "", link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", reps: "10 min" }
       ],
       exercises: [
           { 
@@ -308,7 +308,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", 
             type: "standard" 
           },
           { 
@@ -320,7 +320,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=LIVJZZyZ2qM", 
             type: "standard" 
           },
           { 
@@ -332,7 +332,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/results?search_query=band+dislocation", 
             type: "standard" 
           },
           { 
@@ -344,7 +344,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/M5DeSgxNyKQ", 
             type: "standard" 
           },
           { 
@@ -356,7 +356,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/qB_bC7-CQjI", 
             type: "standard" 
           },
           { 
@@ -368,7 +368,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/YuLqw3kHPaw", 
             type: "standard" 
           },
           { 
@@ -380,7 +380,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/5orOHJL2qS4", 
             type: "standard" 
           }
       ]
@@ -388,7 +388,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
   "legs2": {
       title: "LEGS 2",
       warmup: [
-            { name: "Przykładowa rozgrzewka", pl: "", link: "", reps: "10" }
+            { name: "Bieżnia", pl: "", link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", reps: "10 min" }
       ],
       exercises: [
           { 
@@ -400,7 +400,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", 
             type: "standard" 
           },
           { 
@@ -412,7 +412,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=LIVJZZyZ2qM", 
             type: "standard" 
           },
           { 
@@ -424,7 +424,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/results?search_query=band+dislocation", 
             type: "standard" 
           },
           { 
@@ -436,7 +436,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/M5DeSgxNyKQ", 
             type: "standard" 
           },
           { 
@@ -448,7 +448,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/qB_bC7-CQjI", 
             type: "standard" 
           },
           { 
@@ -460,7 +460,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/YuLqw3kHPaw", 
             type: "standard" 
           },
           { 
@@ -472,7 +472,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/5orOHJL2qS4", 
             type: "standard" 
           }
       ]
@@ -480,7 +480,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
   "pull2": {
       title: "PULL 2",
       warmup: [
-            { name: "Przykładowa rozgrzewka", pl: "", link: "", reps: "10" }
+            { name: "Bieżnia", pl: "", link: "https://www.youtube.com/watch?v=_tKPIDhGPIM", reps: "10 min" }
       ],
       exercises: [
           { 
@@ -492,7 +492,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/watch?v=LIVJZZyZ2qM", 
             type: "standard" 
           },
           { 
@@ -504,7 +504,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/results?search_query=band+dislocation", 
             type: "standard" 
           },
           { 
@@ -516,7 +516,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/M5DeSgxNyKQ", 
             type: "standard" 
           },
           { 
@@ -528,7 +528,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/qB_bC7-CQjI", 
             type: "standard" 
           },
           { 
@@ -540,7 +540,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/YuLqw3kHPaw", 
             type: "standard" 
           },
           { 
@@ -552,7 +552,7 @@ export const DEFAULT_WORKOUTS: WorkoutsMap = {
             tempo: "-", 
             rir: "-", 
             rest: 120, 
-            link: "", 
+            link: "https://www.youtube.com/shorts/5orOHJL2qS4", 
             type: "standard" 
           }
       ]

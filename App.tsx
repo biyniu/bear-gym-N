@@ -7,6 +7,7 @@ import SettingsView from './components/SettingsView';
 import ProgressView from './components/ProgressView';
 import MeasurementsView from './components/MeasurementsView';
 import CardioView from './components/CardioView';
+import TrainerView from './components/TrainerView'; // Import new component
 import InstallPrompt from './components/InstallPrompt';
 import { storage } from './services/storage';
 import { WorkoutsMap, AppSettings } from './types';
@@ -162,6 +163,7 @@ export default function App() {
             <Route path="/measurements" element={<MeasurementsView />} />
             <Route path="/cardio" element={<CardioView />} />
             <Route path="/settings" element={<SettingsView />} />
+            <Route path="/trainer" element={<TrainerView />} />
           </Routes>
         </Layout>
       </HashRouter>
