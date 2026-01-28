@@ -26,58 +26,63 @@ export default function TrainerView() {
       try {
         const rawJson = JSON.parse(event.target?.result as string);
         
-        // --- PARSING LOGIC ---
-        // The backup file is a flat key-value object from localStorage.
-        // We need to reconstruct the structured data.
-        
         let foundWorkouts: WorkoutsMap | null = null;
         let foundMeasurements: BodyMeasurement[] = [];
         const foundHistory: { [key: string]: WorkoutHistoryEntry[] } = {};
         let foundName = "Nieznany Klient";
 
-        // Iteracja po kluczach, aby znaleźć pasujące dane
+        // INTELIGENTNE PARSOWANIE
+        // Zamiast polegać na nazwach kluczy (które się zmieniły na 'niedzwiedz_v1'),
+        // sprawdzamy strukturę danych wewnątrz wartości.
+        
         Object.keys(rawJson).forEach(key => {
-            // Logika wykrywania głównego obiektu treningowego
-            // Szukamy klucza zawierającego 'workout_app', ale wykluczamy klucze pomocnicze
-            const isMainWorkoutKey = key.includes('workout_app') 
-                && !key.includes('_history_') 
-                && !key.includes('_measurements') 
-                && !key.includes('_cardio') 
-                && !key.includes('_last_');
+            let content = rawJson[key];
+            
+            // Jeśli dane są stringiem (z LocalStorage), parsujemy je
+            if (typeof content === 'string') {
+                try { content = JSON.parse(content); } catch { return; }
+            }
 
-            if (isMainWorkoutKey) {
-                try {
-                    // Obsługa zarówno stringified JSON (standard) jak i czystego obiektu (jeśli plik był ręcznie edytowany)
-                    const content = rawJson[key];
-                    if (typeof content === 'string') {
-                        foundWorkouts = JSON.parse(content);
-                    } else if (typeof content === 'object') {
+            if (!content) return;
+
+            // 1. Wykrywanie Głównego Planu Treningowego
+            // Szukamy obiektu, którego wartości mają pole 'exercises' będące tablicą
+            if (!foundWorkouts && typeof content === 'object' && !Array.isArray(content)) {
+                const keys = Object.keys(content);
+                if (keys.length > 0) {
+                    // Sprawdzamy pierwszy element, czy wygląda jak plan
+                    const firstItem = content[keys[0]];
+                    if (firstItem && firstItem.title && Array.isArray(firstItem.exercises)) {
                         foundWorkouts = content;
+                        return; // Znaleziono plan, idziemy dalej
                     }
-                } catch (e) {
-                    console.warn("Błąd parsowania klucza treningów:", key, e);
                 }
             }
-            
-            // Find Measurements
-            if (key.includes('_measurements')) {
-                try {
-                    const content = rawJson[key];
-                    if (typeof content === 'string') foundMeasurements = JSON.parse(content);
-                    else if (typeof content === 'object') foundMeasurements = content;
-                } catch {}
+
+            // 2. Wykrywanie Historii
+            // Szukamy tablicy, która zawiera obiekty z polami 'date' i 'results'
+            if (Array.isArray(content) && content.length > 0) {
+                const firstItem = content[0];
+                if (firstItem.date && firstItem.results && firstItem.timestamp) {
+                    // To jest historia. Musimy ustalić ID treningu.
+                    // Próbujemy wyciągnąć ID z nazwy klucza (np. ..._history_push1)
+                    const parts = key.split('_history_');
+                    if (parts.length > 1) {
+                        foundHistory[parts[1]] = content;
+                    } else {
+                        // Jeśli klucz jest dziwny, próbujemy zgadnąć ID na podstawie pasujących ćwiczeń (opcjonalne, tutaj uproszczone)
+                        // Używamy całego klucza jako ID w ostateczności, ale zazwyczaj split zadziała
+                        foundHistory[key] = content;
+                    }
+                }
             }
 
-            // Find History (keys like ..._history_push1)
-            if (key.includes('_history_')) {
-                const parts = key.split('_history_');
-                if (parts.length > 1) {
-                    const workoutId = parts[1];
-                    try {
-                        const content = rawJson[key];
-                        if (typeof content === 'string') foundHistory[workoutId] = JSON.parse(content);
-                        else if (typeof content === 'object') foundHistory[workoutId] = content;
-                    } catch {}
+            // 3. Wykrywanie Pomiarów
+            // Szukamy tablicy z polami 'weight', 'waist' itp.
+            if (Array.isArray(content) && content.length > 0) {
+                const firstItem = content[0];
+                if (firstItem.weight !== undefined && (firstItem.waist !== undefined || firstItem.biceps !== undefined)) {
+                    foundMeasurements = content;
                 }
             }
         });
@@ -90,12 +95,12 @@ export default function TrainerView() {
                 clientName: foundName
             });
         } else {
-            alert("Nie znaleziono głównej struktury planu treningowego w pliku.\n\nUpewnij się, że w aplikacji 'Ucznia' kliknięto 'Eksportuj' po zapisaniu zmian (wymuszony zapis).");
+            alert("Nie udało się rozpoznać struktury planu treningowego w pliku.\n\nUpewnij się, że plik nie jest pusty i pochodzi z tej aplikacji.");
         }
 
       } catch (err) {
         console.error(err);
-        alert("Błąd odczytu pliku. Upewnij się, że to poprawny plik kopii zapasowej JSON.");
+        alert("Błąd odczytu pliku JSON.");
       }
     };
     reader.readAsText(file);
@@ -126,18 +131,23 @@ export default function TrainerView() {
             onChange={handleFileLoad} 
         />
         <p className="text-xs text-gray-600 mt-6">
-            Twoje własne dane treningowe są bezpieczne.<br/>Ten tryb działa tylko "do odczytu".
+            Logika importu oparta na strukturze danych,<br/>niezależna od nazw plików.
         </p>
       </div>
     );
   }
+
+  // Oblicz ile historii znaleziono dla debugowania
+  const historyCount = Object.keys(importedData.history).length;
 
   return (
     <div className="animate-fade-in pb-10">
       <div className="flex justify-between items-center mb-6 bg-blue-900/30 p-4 rounded-xl border border-blue-800">
         <div>
             <h2 className="text-xl font-bold text-white">Podgląd Podopiecznego</h2>
-            <p className="text-blue-400 text-xs">Tryb tylko do odczytu</p>
+            <p className="text-blue-400 text-xs">
+                Znaleziono: {Object.keys(importedData.workouts).length} planów, {historyCount} historii.
+            </p>
         </div>
         <button 
             onClick={() => setImportedData(null)}
