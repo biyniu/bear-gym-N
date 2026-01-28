@@ -9,16 +9,16 @@ interface HistoryViewProps {
 }
 
 export default function HistoryView({ overrideWorkouts, overrideHistory }: HistoryViewProps) {
-  const { workouts: contextWorkouts } = useContext(AppContext);
+  const context = useContext(AppContext);
   
-  // Trainer Mode Logic
-  const workouts = overrideWorkouts || contextWorkouts;
+  // Dane z contextu lub nadpisane przez TrainerView
+  const workouts = overrideWorkouts || context.workouts;
   const isTrainerMode = !!overrideWorkouts;
 
   const workoutIds = Object.keys(workouts);
   const [openSessions, setOpenSessions] = useState<{ [key: string]: boolean }>({});
   
-  // State for adding/editing (Disabled in Trainer Mode)
+  // State for adding/editing
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingDateId, setEditingDateId] = useState<string | null>(null);
   const [editDateValue, setEditDateValue] = useState("");
@@ -28,28 +28,27 @@ export default function HistoryView({ overrideWorkouts, overrideHistory }: Histo
   const longPressTimer = useRef<number | null>(null);
   const isLongPress = useRef(false);
   
-  // Manual Entry Form State
   const [manualForm, setManualForm] = useState<{
     workoutId: string;
     date: string;
     results: { [exId: string]: string };
   }>({
     workoutId: workoutIds[0] || "",
-    date: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM
+    date: new Date().toISOString().slice(0, 16),
     results: {}
   });
 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // --- GESTURE HANDLERS ---
+  // --- GESTURE HANDLERS (Disabled in Trainer Mode) ---
   const handleTouchStart = (wId: string, index: number, date: string) => {
-    if (isTrainerMode) return; // Disable gestures in trainer mode
+    if (isTrainerMode) return;
     isLongPress.current = false;
     longPressTimer.current = window.setTimeout(() => {
       isLongPress.current = true;
       if (navigator.vibrate) navigator.vibrate(50);
       setOptionsSession({ wId, index, date });
-    }, 600); // 600ms hold time
+    }, 600);
   };
 
   const handleTouchEnd = () => {
@@ -70,10 +69,9 @@ export default function HistoryView({ overrideWorkouts, overrideHistory }: Histo
     if (isLongPress.current) return;
     setOpenSessions(prev => ({ ...prev, [uniqueId]: !prev[uniqueId] }));
   };
-  // ------------------------
 
   const handleDelete = () => {
-    if(!optionsSession) return;
+    if(!optionsSession || isTrainerMode) return;
     const { wId, index } = optionsSession;
 
     if(!window.confirm("Czy na pewno chcesz usunąć ten trening z historii?")) return;
@@ -89,7 +87,7 @@ export default function HistoryView({ overrideWorkouts, overrideHistory }: Histo
   const handleEditInit = () => {
     if(!optionsSession) return;
     const { wId, index, date } = optionsSession;
-    setOptionsSession(null); // Zamknij menu
+    setOptionsSession(null);
     
     const uniqueId = `${wId}_${index}`;
     setEditingDateId(uniqueId);
@@ -109,7 +107,6 @@ export default function HistoryView({ overrideWorkouts, overrideHistory }: Histo
   const handleManualSubmit = () => {
     if(!manualForm.workoutId) return;
     
-    // Formatowanie daty na styl aplikacji (DD.MM.YYYY, HH:MM)
     const d = new Date(manualForm.date);
     const day = d.getDate().toString().padStart(2, '0');
     const month = (d.getMonth()+1).toString().padStart(2, '0');
@@ -141,34 +138,33 @@ export default function HistoryView({ overrideWorkouts, overrideHistory }: Histo
     }));
   };
 
+  // Helper to get history safely
+  const getHistoryForWorkout = (wId: string) => {
+      if (overrideHistory) return overrideHistory[wId] || [];
+      return storage.getHistory(wId);
+  };
+
   return (
-    <div className="animate-fade-in pb-10">
+    <div className={`animate-fade-in ${isTrainerMode ? 'p-2' : 'pb-10'}`}>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white text-center">
-            {isTrainerMode ? "Podgląd: Historia" : "Historia"}
-        </h2>
-        
+        {!isTrainerMode && <h2 className="text-2xl font-bold text-white text-center">Historia</h2>}
         {!isTrainerMode && (
-            <button 
-                onClick={() => setIsAddModalOpen(true)}
-                className="bg-green-700 hover:bg-green-600 text-white px-3 py-2 rounded text-xs font-bold flex items-center shadow"
-            >
-                <i className="fas fa-plus mr-2"></i> DODAJ RĘCZNIE
-            </button>
+          <button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-green-700 hover:bg-green-600 text-white px-3 py-2 rounded text-xs font-bold flex items-center shadow"
+          >
+              <i className="fas fa-plus mr-2"></i> DODAJ RĘCZNIE
+          </button>
         )}
       </div>
       
       {workoutIds.length === 0 && <p className="text-center text-gray-500">Brak planów treningowych.</p>}
 
       {workoutIds.map(wId => {
-        // GET HISTORY: Override or Storage
-        const history: WorkoutHistoryEntry[] = overrideHistory 
-            ? (overrideHistory[wId] || []) 
-            : storage.getHistory(wId);
-
+        const history: WorkoutHistoryEntry[] = getHistoryForWorkout(wId);
         const planData = workouts[wId];
         
-        if (history.length === 0) return null;
+        if (!history || history.length === 0) return null;
 
         return (
           <div key={wId} className="mb-8">
@@ -182,7 +178,7 @@ export default function HistoryView({ overrideWorkouts, overrideHistory }: Histo
                  return (
                    <div key={uniqueId} className="bg-[#1e1e1e] rounded-xl overflow-hidden shadow border border-gray-800 select-none">
                      <div 
-                        className="w-full p-4 flex justify-between items-center bg-gray-800 active:bg-gray-700 transition-colors cursor-pointer"
+                        className={`w-full p-4 flex justify-between items-center bg-gray-800 transition-colors cursor-pointer ${!isTrainerMode && 'active:bg-gray-700'}`}
                         onContextMenu={(e) => e.preventDefault()}
                         onTouchStart={() => handleTouchStart(wId, idx, session.date)}
                         onTouchEnd={handleTouchEnd}
@@ -210,7 +206,7 @@ export default function HistoryView({ overrideWorkouts, overrideHistory }: Histo
                                 </span>
                                 {!isTrainerMode && (
                                     <span className="text-gray-500 text-[10px] bg-gray-900 px-1 rounded border border-gray-700">
-                                        Opcje
+                                        Opcje (przytrzymaj)
                                     </span>
                                 )}
                             </div>
@@ -244,8 +240,8 @@ export default function HistoryView({ overrideWorkouts, overrideHistory }: Histo
         );
       })}
 
-      {/* OPTIONS MODAL (LONG PRESS) - Disabled in Trainer Mode */}
-      {!isTrainerMode && optionsSession && (
+      {/* OPTIONS MODAL (LONG PRESS) - Only if NOT trainer mode */}
+      {optionsSession && !isTrainerMode && (
           <div 
             className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4 animate-fade-in"
             onClick={() => setOptionsSession(null)}
@@ -280,8 +276,8 @@ export default function HistoryView({ overrideWorkouts, overrideHistory }: Histo
           </div>
       )}
 
-      {/* MODAL DODAWANIA RĘCZNEGO */}
-      {!isTrainerMode && isAddModalOpen && (
+      {/* MODAL DODAWANIA RĘCZNEGO - Only if NOT trainer mode */}
+      {isAddModalOpen && !isTrainerMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4 overflow-y-auto">
             <div className="bg-[#1e1e1e] rounded-xl w-full max-w-lg shadow-2xl border border-gray-700 max-h-[90vh] flex flex-col">
                 <div className="p-4 border-b border-gray-700 flex justify-between items-center sticky top-0 bg-[#1e1e1e] z-10 rounded-t-xl">

@@ -7,7 +7,7 @@ import SettingsView from './components/SettingsView';
 import ProgressView from './components/ProgressView';
 import MeasurementsView from './components/MeasurementsView';
 import CardioView from './components/CardioView';
-import TrainerView from './components/TrainerView'; // Import new component
+import TrainerView from './components/TrainerView';
 import InstallPrompt from './components/InstallPrompt';
 import { storage } from './services/storage';
 import { WorkoutsMap, AppSettings } from './types';

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { storage } from '../services/storage';
 import { BodyMeasurement } from '../types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -8,11 +8,19 @@ interface MeasurementsViewProps {
 }
 
 export default function MeasurementsView({ overrideMeasurements }: MeasurementsViewProps) {
-  // Use overridden data (Trainer mode) or local storage
+  // Use override data if present, otherwise load from storage
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>(overrideMeasurements || storage.getMeasurements());
-  
   const isTrainerMode = !!overrideMeasurements;
-  
+
+  // Refresh from storage if not in trainer mode (and if component remounts/updates)
+  useEffect(() => {
+    if(!isTrainerMode) {
+        setMeasurements(storage.getMeasurements());
+    } else if (overrideMeasurements) {
+        setMeasurements(overrideMeasurements);
+    }
+  }, [overrideMeasurements, isTrainerMode]);
+
   const [selectedMetric, setSelectedMetric] = useState<keyof BodyMeasurement>('weight');
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -36,8 +44,8 @@ export default function MeasurementsView({ overrideMeasurements }: MeasurementsV
   };
 
   const handleSave = () => {
+    if (isTrainerMode) return;
     if (!form.date) return alert("Wybierz datę");
-    // At least one value should be present
     if (!form.weight && !form.waist && !form.chest && !form.biceps && !form.thigh) {
         return alert("Wpisz chociaż jedną wartość");
     }
@@ -52,15 +60,11 @@ export default function MeasurementsView({ overrideMeasurements }: MeasurementsV
       thigh: form.thigh
     };
 
-    // Add and sort by date
     const updated = [...measurements, newEntry].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     setMeasurements(updated);
-    if (!isTrainerMode) {
-        storage.saveMeasurements(updated);
-    }
+    storage.saveMeasurements(updated);
     
-    // Clear form except date
     setForm(prev => ({ 
         ...prev, 
         weight: '', waist: '', chest: '', biceps: '', thigh: '' 
@@ -68,15 +72,13 @@ export default function MeasurementsView({ overrideMeasurements }: MeasurementsV
   };
 
   const handleDelete = (id: string) => {
+    if (isTrainerMode) return;
     if (!window.confirm("Usunąć ten wpis?")) return;
     const updated = measurements.filter(m => m.id !== id);
     setMeasurements(updated);
-    if (!isTrainerMode) {
-        storage.saveMeasurements(updated);
-    }
+    storage.saveMeasurements(updated);
   };
 
-  // Prepare data for chart
   const chartData = measurements
     .map(m => ({
         date: m.date,
@@ -84,14 +86,12 @@ export default function MeasurementsView({ overrideMeasurements }: MeasurementsV
     }))
     .filter(d => !isNaN(d.value));
 
-  // Domain calculation
   const values = chartData.map(d => d.value);
   const minVal = values.length ? Math.min(...values) : 0;
   const maxVal = values.length ? Math.max(...values) : 100;
   const domainMin = Math.max(0, Math.floor(minVal - 2));
   const domainMax = Math.ceil(maxVal * 1.1);
 
-  // Custom label similar to ProgressView
   const CustomLabel = (props: any) => {
     const { x, y, value } = props;
     return (
@@ -102,10 +102,8 @@ export default function MeasurementsView({ overrideMeasurements }: MeasurementsV
   };
 
   return (
-    <div className="animate-fade-in pb-10">
-      <h2 className="text-2xl font-bold text-white mb-6 text-center">
-        {isTrainerMode ? "Podgląd: Pomiary" : "Pomiary Ciała"}
-      </h2>
+    <div className={`animate-fade-in ${isTrainerMode ? 'p-2' : 'pb-10'}`}>
+      {!isTrainerMode && <h2 className="text-2xl font-bold text-white mb-6 text-center">Pomiary Ciała</h2>}
 
       {/* Input Form - Hidden in Trainer Mode */}
       {!isTrainerMode && (

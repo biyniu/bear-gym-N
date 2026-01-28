@@ -1,14 +1,28 @@
-import React, { useContext, useState, useRef } from 'react';
+import React, { useContext, useState, useRef, useEffect } from 'react';
 import { AppContext } from '../App';
 import { storage } from '../services/storage';
 import { DEFAULT_WORKOUTS, CLIENT_CONFIG } from '../constants';
-import { Exercise, WorkoutPlan } from '../types';
+import { Exercise, WorkoutPlan, CardioSession, WorkoutHistoryEntry } from '../types';
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
+
+declare var html2pdf: any;
 
 export default function SettingsView() {
-  const { settings, updateSettings, playAlarm, workouts, updateWorkouts } = useContext(AppContext);
+  const { settings, updateSettings, playAlarm, workouts, updateWorkouts, logo } = useContext(AppContext);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string>("");
   const [editingExerciseIdx, setEditingExerciseIdx] = useState<number | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  
+  // Cardio Date Range State (Default: First day of current month -> Today)
+  const [cardioStartDate, setCardioStartDate] = useState(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30); // Default last 30 days
+    return date.toISOString().split('T')[0];
+  });
+  const [cardioEndDate, setCardioEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   // Helper do bezpiecznej aktualizacji stanu (immutable update)
   const updatePlanExercises = (workoutId: string, newExercises: Exercise[]) => {
@@ -88,13 +102,9 @@ export default function SettingsView() {
 
   // --- Backup Logic ---
   const handleExport = () => {
-    // CRITICAL FIX: Zapisz aktualny stan z pamięci RAM do LocalStorage przed eksportem.
-    // Dzięki temu, nawet jeśli użytkownik dopiero co zaktualizował aplikację i nie wprowadził zmian,
-    // plik eksportu będzie zawierał pełną strukturę treningów, a nie pusty obiekt.
     storage.saveWorkouts(workouts);
 
     const data: any = {};
-    // Iterate localStorage and grab keys related to this app
     for(let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if(key && (key.startsWith(CLIENT_CONFIG.storageKey) || key === 'app_settings')) {
@@ -132,14 +142,91 @@ export default function SettingsView() {
     reader.readAsText(file);
   };
 
+  // --- Report Helpers ---
+  const getExerciseChartData = (workoutId: string, exerciseId: string) => {
+    const history = storage.getHistory(workoutId);
+    if (!history || history.length < 2) return []; // Min 2 points for chart
+
+    return history.slice().reverse().map(entry => {
+      const resultStr = entry.results[exerciseId];
+      if (!resultStr) return null;
+
+      const matches = resultStr.matchAll(/(\d+(?:[.,]\d+)?)\s*kg/gi);
+      let maxWeight = 0;
+      let found = false;
+
+      for (const match of matches) {
+        const weightVal = parseFloat(match[1].replace(',', '.'));
+        if (!isNaN(weightVal)) {
+          if (weightVal > maxWeight) maxWeight = weightVal;
+          found = true;
+        }
+      }
+
+      if (!found) return null;
+
+      return {
+        date: entry.date.split(',')[0].slice(0,5), // Short date DD.MM
+        weight: maxWeight
+      };
+    }).filter(Boolean);
+  };
+
+  const getFilteredCardio = () => {
+    let sessions = storage.getCardioSessions();
+    if (cardioStartDate) {
+        sessions = sessions.filter(s => s.date >= cardioStartDate);
+    }
+    if (cardioEndDate) {
+        sessions = sessions.filter(s => s.date <= cardioEndDate);
+    }
+    return sessions;
+  };
+
+  const getCardioSummary = () => {
+    const s = getFilteredCardio();
+    if(s.length === 0) return { count: 0, range: "Brak w tym okresie" };
+    
+    // Używamy dat z formularza do opisu zakresu, jeśli są wybrane, lub faktycznych dat z danych
+    const startLabel = cardioStartDate || "Początek";
+    const endLabel = cardioEndDate || "Dzisiaj";
+    
+    return {
+        count: s.length,
+        range: `${startLabel} - ${endLabel}`
+    };
+  };
+
+  // --- Full Report Generation ---
+  const handleGenerateReport = () => {
+    if (!reportRef.current) return;
+    setIsGeneratingReport(true);
+
+    const element = reportRef.current;
+    const opt = {
+      margin:       0,
+      filename:     `Raport_Analiza_${CLIENT_CONFIG.name.replace(/\s+/g, '_')}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    setTimeout(() => {
+        html2pdf().set(opt).from(element).save().then(() => {
+            setIsGeneratingReport(false);
+        });
+    }, 1000); // Dłuższy timeout aby wykresy zdążyły się wyrenderować
+  };
+
   return (
-    <div className="animate-fade-in pb-10">
+    <div className="animate-fade-in pb-10 relative">
       <h2 className="text-2xl font-bold text-white mb-6 text-center">Ustawienia</h2>
 
       {/* Backup Section */}
       <div className="bg-[#1e1e1e] rounded-xl shadow-md p-5 mb-6 border-l-4 border-blue-600">
         <h3 className="text-lg font-bold text-white mb-4 flex items-center">
-          <i className="fas fa-save text-blue-500 mr-2"></i>Kopia zapasowa
+          <i className="fas fa-save text-blue-500 mr-2"></i>Kopia zapasowa (JSON)
         </h3>
         <div className="grid grid-cols-2 gap-4">
             <button 
@@ -165,6 +252,53 @@ export default function SettingsView() {
             onChange={handleImport} 
         />
         <p className="text-xs text-gray-500 mt-3 text-center">Pobierz plik, aby przenieść dane na inne urządzenie.</p>
+      </div>
+
+      {/* Reports Section */}
+      <div className="bg-[#1e1e1e] rounded-xl shadow-md p-5 mb-6 border-l-4 border-green-600">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center">
+          <i className="fas fa-file-pdf text-green-500 mr-2"></i>Raporty & Analiza
+        </h3>
+        <p className="text-sm text-gray-400 mb-4">
+            Generuj PDF z wykresami postępów i analizą Cardio.
+        </p>
+
+        {/* Date Filter for Cardio */}
+        <div className="bg-black/30 p-3 rounded-lg mb-4 border border-gray-700">
+            <h4 className="text-xs text-green-400 font-bold mb-2 uppercase">Zakres dat dla Cardio</h4>
+            <div className="grid grid-cols-2 gap-3">
+                <div>
+                    <label className="text-[10px] text-gray-500 block mb-1">Od:</label>
+                    <input 
+                        type="date" 
+                        value={cardioStartDate}
+                        onChange={(e) => setCardioStartDate(e.target.value)}
+                        className="w-full bg-gray-800 text-white text-xs p-2 rounded border border-gray-600 outline-none"
+                    />
+                </div>
+                <div>
+                    <label className="text-[10px] text-gray-500 block mb-1">Do:</label>
+                    <input 
+                        type="date" 
+                        value={cardioEndDate}
+                        onChange={(e) => setCardioEndDate(e.target.value)}
+                        className="w-full bg-gray-800 text-white text-xs p-2 rounded border border-gray-600 outline-none"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <button 
+            onClick={handleGenerateReport}
+            disabled={isGeneratingReport}
+            className="w-full bg-green-700 hover:bg-green-600 text-white p-4 rounded-lg flex items-center justify-center transition font-bold shadow-lg"
+        >
+            {isGeneratingReport ? (
+                <span className="flex items-center"><i className="fas fa-spinner fa-spin mr-2"></i> Generowanie...</span>
+            ) : (
+                <span className="flex items-center"><i className="fas fa-file-contract mr-2 text-xl"></i> POBIERZ RAPORT ANALITYCZNY</span>
+            )}
+        </button>
       </div>
 
       {/* Sound Settings */}
@@ -266,6 +400,129 @@ export default function SettingsView() {
           </div>
         )}
       </div>
+
+      {/* HIDDEN REPORT TEMPLATE (OFF-SCREEN) */}
+      <div className="absolute top-0 left-[-9999px]">
+        <div ref={reportRef} className="w-[210mm] min-h-[297mm] bg-[#121212] text-white font-sans">
+            {/* Header */}
+            <div className="bg-[#1e1e1e] p-8 border-b-4 border-red-600 flex justify-between items-center mb-6">
+                <div className="flex items-center space-x-4">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-red-600 bg-black">
+                        <img 
+                            src={logo} 
+                            alt="Logo" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).src='https://img.icons8.com/ios-filled/100/ef4444/bear.png'; }} 
+                        />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-wider">BEAR GYM</h1>
+                        <p className="text-gray-400 text-sm mt-1">RAPORT ANALITYCZNY</p>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <h2 className="text-xl font-bold">{CLIENT_CONFIG.name}</h2>
+                    <p className="text-gray-400 text-xs">Data: {new Date().toLocaleDateString()}</p>
+                </div>
+            </div>
+
+            <div className="px-8 pb-8 space-y-12">
+                
+                {/* SECTION: CARDIO (FILTERED) */}
+                <section className="break-inside-avoid">
+                    <div className="flex justify-between items-center border-b border-blue-800 pb-2 mb-6">
+                        <h2 className="text-xl font-bold text-blue-500 flex items-center">
+                            <i className="fas fa-heartbeat mr-2"></i> Cardio
+                        </h2>
+                        <div className="text-xs text-gray-400 text-right">
+                            <div className="text-white font-mono">{getCardioSummary().range}</div>
+                            <div>Sesje: <span className="text-white font-bold">{getCardioSummary().count}</span></div>
+                        </div>
+                    </div>
+                    
+                    <table className="w-full text-sm text-left text-gray-300">
+                        <thead className="bg-[#1e1e1e] text-white uppercase text-xs">
+                            <tr>
+                                <th className="px-4 py-2">Data</th>
+                                <th className="px-4 py-2">Aktywność</th>
+                                <th className="px-4 py-2">Czas</th>
+                                <th className="px-4 py-2">Notatki</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800">
+                            {getFilteredCardio().length > 0 ? getFilteredCardio().map(s => (
+                                <tr key={s.id} className="hover:bg-gray-900">
+                                    <td className="px-4 py-2 font-bold text-white">{s.date}</td>
+                                    <td className="px-4 py-2 uppercase text-xs">{s.type}</td>
+                                    <td className="px-4 py-2">{s.duration}</td>
+                                    <td className="px-4 py-2 italic text-gray-500">{s.notes || '-'}</td>
+                                </tr>
+                            )) : (
+                                <tr><td colSpan={4} className="px-4 py-4 text-center text-gray-500">Brak sesji cardio w wybranym zakresie</td></tr>
+                            )}
+                        </tbody>
+                    </table>
+                </section>
+
+                {/* SECTION: WORKOUT LOGS (CHARTS ONLY) */}
+                <section>
+                    <h2 className="text-xl font-bold text-red-500 border-b border-red-800 pb-2 mb-6 flex items-center">
+                        <i className="fas fa-chart-line mr-2"></i> Analiza Treningowa
+                    </h2>
+                    
+                    {Object.keys(workouts).map(wId => {
+                        const history = storage.getHistory(wId);
+                        const plan = workouts[wId];
+                        
+                        // Check if we have enough data for charts
+                        const hasCharts = plan.exercises.some(ex => getExerciseChartData(wId, ex.id).length >= 2);
+
+                        if(!hasCharts && history.length === 0) return null;
+
+                        return (
+                            <div key={wId} className="mb-10 break-inside-avoid">
+                                <h3 className="text-lg font-bold text-white bg-[#1e1e1e] p-2 border-l-4 border-red-600 mb-4 flex justify-between">
+                                    {plan.title}
+                                    <span className="text-xs font-normal text-gray-400 mt-1">{history.length} wykonanych treningów (łącznie)</span>
+                                </h3>
+
+                                {/* CHARTS GRID ONLY */}
+                                {hasCharts ? (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {plan.exercises.map(ex => {
+                                            const cData = getExerciseChartData(wId, ex.id);
+                                            if (cData.length < 2) return null;
+                                            return (
+                                                <div key={ex.id} className="bg-[#181818] p-2 rounded border border-gray-800 break-inside-avoid">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-[10px] font-bold text-gray-300 truncate w-3/4">{ex.name}</span>
+                                                        <span className="text-[8px] text-red-500">{Math.max(...cData.map(d=>d.weight))}kg</span>
+                                                    </div>
+                                                    <div className="h-[60px] w-full">
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <LineChart data={cData}>
+                                                                <Line type="monotone" dataKey="weight" stroke="#ef4444" strokeWidth={2} dot={false} isAnimationActive={false} />
+                                                            </LineChart>
+                                                        </ResponsiveContainer>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-gray-500 italic p-2">Zbyt mało danych do wygenerowania wykresów (wymagane min. 2 treningi z zapisanym ciężarem).</p>
+                                )}
+                            </div>
+                        )
+                    })}
+                </section>
+                
+                <div className="mt-10 text-center text-gray-600 text-[10px] border-t border-gray-800 pt-4">
+                    Wygenerowano przez Bear Gym App | {new Date().getFullYear()}
+                </div>
+            </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -306,4 +563,4 @@ const ExerciseForm = ({ exercise, onSave, onCancel, onDelete }: {
       <button onClick={onDelete} className="w-full mt-2 bg-red-900 text-red-200 py-2 rounded text-xs flex justify-center items-center hover:bg-red-800"><i className="fas fa-trash mr-1"></i> Usuń ćwiczenie</button>
     </div>
   );
-}
+};

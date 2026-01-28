@@ -225,11 +225,7 @@ export default function ActiveWorkout() {
         <ul className="space-y-2">
           {workoutData.warmup.map((item, idx) => (
             <li key={idx} className="flex justify-between text-sm items-center border-b border-gray-700 py-1 last:border-0">
-              <span>
-                  <span className="text-gray-500 mr-1">{idx+1}.</span> 
-                  {item.name} 
-                  {item.pl && <span className="text-gray-400 text-xs ml-1">({item.pl})</span>}
-              </span>
+              <span><span className="text-gray-500 mr-1">{idx+1}.</span> {item.pl}</span>
               <div className="flex items-center space-x-3">
                 <span className="text-gray-400 text-xs">{item.reps}</span>
                 {item.link && (
